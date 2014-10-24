@@ -56,7 +56,7 @@ en:
     YOUR_ORDER: 'Your Order'
   CheckoutPage:
     ACCOUNT: Account
-    ALREADY_MEMBER: 'If you are already a member please %s log in. %s'
+    ALREADY_MEMBER: 'Please s %s log in. %s'
     DESCRIPTION: 'Generic content page'
     EMAIL: Email
     MEMBER_ALREADY_EXISTS: 'Sorry, a member already exists with that email address. If this is your email address, please log in first before placing your order.'
@@ -65,13 +65,15 @@ en:
     NOT_VALID_METHOD: 'Sorry, that is not a valid payment method.'
     PASSWORD: Password
     PAYMENT: Payment
-    PLEASE_CHOOSE_PASSWORD: 'Please choose a password, so you can login and check your order history in the future.'
+    PLEASE_CHOOSE_PASSWORD: 'Already have an account wiht us?'
     PLEASE_ENTER_EMAIL_ADDRESS: 'Please enter your email address.'
     PLURALNAME: 'Checkout Pags'
     PROCEED_TO_PAY: 'Proceed to pay'
     SELECT_PAYMENT_METHOD: 'Please select a payment method.'
     SINGULARNAME: 'Checkout Page'
     TRY_AGAIN: 'Please go back and try again.'
+    SAME_ADDRESS: 'Same as shipping address'
+    POSTAL_CODE: 'Post Code'
   Customer:
     PLURALNAME: Customers
     SINGULARNAME: Customer

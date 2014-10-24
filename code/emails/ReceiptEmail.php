@@ -26,7 +26,7 @@ class ReceiptEmail extends ProcessedEmail {
 
 		$siteConfig = ShopConfig::get()->first();
 		if ($customer->Email) $this->to = $customer->Email; 
-		if ($siteConfig->ReceiptSubject) $this->subject = $siteConfig->ReceiptSubject . ' - Order #'.$order->ID;
+		if ($siteConfig->ReceiptSubject) $this->subject = $siteConfig->ReceiptSubject . ' - Order #' . $order->ID;
 		if ($siteConfig->ReceiptBody) $this->body = $siteConfig->ReceiptBody;
 		
 		if ($siteConfig->ReceiptFrom) $this->from = $siteConfig->ReceiptFrom;
