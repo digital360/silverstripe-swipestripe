@@ -133,21 +133,25 @@ class OrderForm extends Form {
 		//Payment fields
 		$supported_methods = PaymentProcessor::get_supported_methods();
 
+		$paymentProcessFields = new FieldList();
+		$years = range(date('y'), date('y') + 10);
+
+		$paymentFields = CompositeField::create()->setName('PaymentFields');
+
 		$source = array();
 		foreach ($supported_methods as $methodName) {
 			$methodConfig = PaymentFactory::get_factory_config($methodName);
 			$source[$methodName] = $methodConfig['title'];
 		}
 
-		$paymentFields = CompositeField::create(
-			new HeaderField(_t('CheckoutPage.PAYMENT',"Payment"), 3),
-			DropDownField::create(
-				'PaymentMethod',
-				'Select Payment Method',
-				$source
-			)->setCustomValidationMessage(_t('CheckoutPage.SELECT_PAYMENT_METHOD',"Please select a payment method."))
-		)->setName('PaymentFields');
+		$paymentFields->push(new HeaderField(_t('CheckoutPage.PAYMENT',"Payment"), 3));
 
+		$methods = new DropDownField('PaymentMethod', 'Select Payment Method', $source);
+		$methods->setCustomValidationMessage(_t('CheckoutPage.SELECT_PAYMENT_METHOD',"Please select a payment method."));
+		$methods->addExtraClass('fields');
+		$paymentFields->push($methods);
+
+		Requirements::javascript('digital360-payments/scripts/digital360-payments.js');
 
 		$fields = FieldList::create(
 			$itemFields,
@@ -234,19 +238,30 @@ class OrderForm extends Form {
 	 * @see Form::validate()
 	 */
 	public function validate(){
-		$valid = true;
-		if($this->validator){
-			$errors = $this->validator->validate();
+		parent::validate();
+		
+		// Check for errors thrown
+		// to specific fields
+		// (usually by the requiredFields 
+		// param in the form)
+		$errors = $this->getValidator()->getErrors();
 
-			if($errors){
-				// Load errors into session and post back
-				$data = $this->getData();
-				Session::set("FormInfo.{$this->FormName()}.errors", $errors); 
-				Session::set("FormInfo.{$this->FormName()}.data", $data);
-				$valid = false;
+		if (!empty($errors)) {
+			$this->sessionMessage($errors, 'bad');
+			return false;
+		} else {
+
+			// If no errors are found, check
+			// for messages to the form
+			$messages = $this->Message();
+
+			if (!empty($messages)) {
+				$this->sessionMessage($messages, 'bad');
+				return false;
 			}
 		}
-		return $valid;
+
+		return true;
 	}
 
 	public function process($data, $form) {
@@ -286,31 +301,10 @@ class OrderForm extends Form {
 			$member->addToGroupByCode('customers');
 			$member->logIn();
 		}
-		
-		//Save the order
+
+		// Save the order
 		$order = Cart::get_current_order();
 		$items = $order->Items();
-
-		$form->saveInto($order);
-		$order->MemberID = $member->ID;
-		$order->Status = Order::STATUS_PENDING;
-		$order->OrderedOn = SS_Datetime::now()->getValue();
-		$order->write();
-
-		//Saving an update on the order
-		if ($notes = $data['Notes']) {
-			$update = new Order_Update();
-			$update->Note = $notes;
-			$update->Visible = true;
-			$update->OrderID = $order->ID;
-			$update->MemberID = $member->ID;
-			$update->write();
-		}
-
-		//Add modifiers to order
-		$order->updateModifications($data)->write();
-
-		Session::clear('Cart.OrderID');
 
 		$order->onBeforePayment();
 
@@ -321,13 +315,56 @@ class OrderForm extends Form {
 			$paymentData = array(
 				'Amount' => number_format($order->Total()->getAmount(), $precision, '.', ''),
 				'Currency' => $order->Total()->getCurrency(),
-				'Reference' => $order->ID
+				'Reference' => $order->ID,
+				'Form' => $form
 			);
+
+			// Add Payment fields if there is any
+			$paymentData['PaymentFields'] = new stdClass();
+
+			if (!empty($data)) {
+				foreach ($data as $key => $paymentFields) {
+					$paymentData['PaymentFields']->$key = $paymentFields;
+				}
+			}
+
 			$paymentProcessor->payment->OrderID = $order->ID;
 			$paymentProcessor->payment->PaidByID = $member->ID;
 
 			$paymentProcessor->setRedirectURL($order->Link());
 			$paymentProcessor->capture($paymentData);
+
+			// Check SS form validation, 
+			// if failed return back to repay page
+			if (!$form->validate()) {
+
+				// If validation failed, return back
+				return $this->controller->redirectBack();
+			} else {
+
+				// If validation succeeded, 
+				// continue with saving the order
+				$form->saveInto($order);
+				$order->MemberID = $member->ID;
+				$order->Status = Order::STATUS_PENDING;
+				$order->OrderedOn = SS_Datetime::now()->getValue();
+				$order->write();
+
+				// Saving an update on the order
+				if ($notes = $data['Notes']) {
+					$update = new Order_Update();
+					$update->Note = $notes;
+					$update->Visible = true;
+					$update->OrderID = $order->ID;
+					$update->MemberID = $member->ID;
+					$update->write();
+				}
+
+				// Add modifiers to order
+				$order->updateModifications($data)->write();
+
+				Session::clear('Cart.OrderID');
+			}
 		}
 		catch (Exception $e) {
 

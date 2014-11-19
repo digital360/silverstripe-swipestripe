@@ -21,7 +21,6 @@ class RepayForm extends Form {
 	 * @param Order $currentOrder
 	 */
 	function __construct($controller, $name) {
-
 		parent::__construct($controller, $name, FieldList::create(), FieldList::create(), null);
 
 		Requirements::javascript(THIRDPARTY_DIR . '/jquery/jquery.js');
@@ -38,7 +37,6 @@ class RepayForm extends Form {
 		$this->validator = $this->createValidator();
 
 		$this->setupFormErrors();
-
 		$this->setTemplate('RepayForm');
 		$this->addExtraClass('order-form');
 	}
@@ -47,8 +45,7 @@ class RepayForm extends Form {
 	 * Set up current form errors in session to
 	 * the current form if appropriate.
 	 */
-	public function setupFormErrors() {
-
+	public function setupFormErrors() {	
 		//Only run when fields exist
 		if ($this->fields->exists()) {
 			parent::setupFormErrors();
@@ -63,31 +60,35 @@ class RepayForm extends Form {
 		//Payment fields
 		$supported_methods = PaymentProcessor::get_supported_methods();
 
+		$paymentProcessFields = new FieldList();
+		$outstanding = $order->TotalOutstanding()->Nice();
+		$years = range(date('y'), date('y') + 10);
+
+		$paymentFields = CompositeField::create()->setName('PaymentFields');
+
 		$source = array();
 		foreach ($supported_methods as $methodName) {
 			$methodConfig = PaymentFactory::get_factory_config($methodName);
 			$source[$methodName] = $methodConfig['title'];
 		}
-		
-		$outstanding = $order->TotalOutstanding()->Nice();
 
-		$paymentFields = CompositeField::create(
-			new HeaderField(_t('CheckoutPage.PAYMENT',"Payment"), 3),
-			LiteralField::create('RepayLit', "<p>Process a payment for the oustanding amount: $outstanding</p>"),
-			DropDownField::create(
-				'PaymentMethod',
-				'Select Payment Method',
-				$source
-			)->setCustomValidationMessage(_t('CheckoutPage.SELECT_PAYMENT_METHOD',"Please select a payment method."))
-		)->setName('PaymentFields');
+		$paymentFields->push(new HeaderField(_t('CheckoutPage.PAYMENT',"Payment"), 3));
+		$paymentFields->push(LiteralField::create('RepayLit', "<p>Process a payment for the oustanding amount: $outstanding</p>"));
 
+		$methods = new DropDownField('PaymentMethod', 'Select Payment Method', $source);
+		$methods->setCustomValidationMessage(_t('CheckoutPage.SELECT_PAYMENT_METHOD',"Please select a payment method."));
+		$methods->addExtraClass('fields');
+		$paymentFields->push($methods);
 
-		$fields = FieldList::create(
+		Requirements::javascript('digital360-payments/scripts/digital360-payments.js');
+
+		$fields = new FieldList(
 			$paymentFields
 		);
 
 		$this->extend('updateFields', $fields);
 		$fields->setForm($this);
+
 		return $fields;
 	}
 
@@ -131,20 +132,31 @@ class RepayForm extends Form {
 	 * @see OrderFormValidator::php()
 	 * @see Form::validate()
 	 */
-	function validate(){
-		$valid = true;
-		if($this->validator){
-			$errors = $this->validator->validate();
+	public function validate() {
+		parent::validate();
+		
+		// Check for errors thrown
+		// to specific fields
+		// (usually by the requiredFields 
+		// param in the form)
+		$errors = $this->getValidator()->getErrors();
 
-			if($errors){
-				// Load errors into session and post back
-				$data = $this->getData();
-				Session::set("FormInfo.{$this->FormName()}.errors", $errors); 
-				Session::set("FormInfo.{$this->FormName()}.data", $data);
-				$valid = false;
+		if (!empty($errors)) {
+			$this->sessionMessage($errors, 'bad');
+			return false;
+		} else {
+
+			// If no errors are found, check
+			// for messages to the form
+			$messages = $this->Message();
+
+			if (!empty($messages)) {
+				$this->sessionMessage($messages, 'bad');
+				return false;
 			}
 		}
-		return $valid;
+
+		return true;
 	}
 
 	public function process($data, $form) {
@@ -170,16 +182,32 @@ class RepayForm extends Form {
 			$order = DataObject::get_by_id('Order', $orderID);
 		}
 		Session::clear('Repay.OrderID');
-
+		
 		$order->onBeforePayment();
 
-		try {
+		// Check SS form validation, 
+		// if failed return back to repay page
+		if (!$form->validate()) {
+			return $this->controller->redirectBack();
+		}
 
+		try {
 			$paymentData = array(
 				'Amount' => number_format($order->TotalOutstanding()->getAmount(), 2, '.', ''),
 				'Currency' => $order->TotalOutstanding()->getCurrency(),
-				'Reference' => $order->ID
+				'Reference' => $order->ID,
+				'Form' => $form
 			);
+
+			// Add Payment fields if there is any
+			$paymentData['PaymentFields'] = new stdClass();
+
+			if (!empty($data)) {
+				foreach ($data as $key => $paymentFields) {
+					$paymentData['PaymentFields']->$key = $paymentFields;
+				}
+			}
+
 			$paymentProcessor->payment->OrderID = $order->ID;
 			$paymentProcessor->payment->PaidByID = $member->ID;
 
@@ -196,7 +224,7 @@ class RepayForm extends Form {
 			SS_Log::log(new Exception(print_r($result->message(), true)), SS_Log::NOTICE);
 			SS_Log::log(new Exception(print_r($e->getMessage(), true)), SS_Log::NOTICE);
 
-			$this->controller->redirect($order->Link());
+			return $this->controller->redirect($order->Link());
 		}
 	}
 
