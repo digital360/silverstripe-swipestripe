@@ -67,6 +67,10 @@ class RepayForm extends Form {
 		$paymentFields = CompositeField::create()->setName('PaymentFields');
 
 		$source = array();
+
+		// Add a default field
+		$source['none'] = 'Select Payment Method';
+		
 		foreach ($supported_methods as $methodName) {
 			$methodConfig = PaymentFactory::get_factory_config($methodName);
 			$source[$methodName] = $methodConfig['title'];
@@ -167,12 +171,10 @@ class RepayForm extends Form {
 			$paymentProcessor = PaymentFactory::factory($paymentMethod);
 		}
 		catch (Exception $e) {
-			Debug::friendlyError(
-				403,
-				_t('CheckoutPage.NOT_VALID_METHOD',"Sorry, that is not a valid payment method."),
-				_t('CheckoutPage.TRY_AGAIN',"Please go back and try again.")
-			);
-			return;
+			// If payment method not found, return back
+			// with an error message to the form
+			$this->sessionMessage('Invalid Payment Type', 'bad');
+			return $this->controller->redirectBack();
 		}
 
 		$member = Customer::currentUser();
