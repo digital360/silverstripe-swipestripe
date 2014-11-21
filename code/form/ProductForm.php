@@ -189,18 +189,12 @@ class ProductForm extends Form {
 			$cartPage = DataObject::get_one('CartPage');
 			$message = _t('ProductForm.PRODUCT_ADDED', 'The product was added to your cart.');
 			if ($cartPage->exists()) {
-				$message = _t(
-					'ProductForm.PRODUCT_ADDED_LINK', 
-					'The product was added to {openanchor}your cart{closeanchor}.',
-					array(
-						'openanchor' => "<a href=\"{$cartPage->Link()}\">",
-						'closeanchor' => "</a>"
-					)
-				);
+				$message = 'The product was added to <a href="' . $cartPage->Link() . '">your cart.';
 			}
 			$form->sessionMessage(
 				DBField::create_field("HTMLText", $message),
-				'good'
+				'good',
+				false
 			);
 		}
 		$this->goToNextPage();
