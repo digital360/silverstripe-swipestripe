@@ -22,9 +22,6 @@
 	<% if Cart.Items %>
 		<% if Actions %>
 		<div class="Actions">
-			<div class="loading">
-				<img src="swipestripe/images/loading.gif" />
-			</div>
 			<% loop Actions %>
 				$Field
 			<% end_loop %>
