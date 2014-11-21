@@ -42,6 +42,7 @@
 
 			_indicateProcessing: function(e) {
 
+				$('input[name="action_process"]', this).attr('disabled','disabled');
 				$('input[name="action_process"]', this).attr('value', 'Processing...');
 				$('.Actions .loading', this).show();
 			}
