@@ -512,7 +512,13 @@ class Order extends DataObject implements PermissionProvider {
 	 * @return Boolean
 	 */
 	public function getPaid() {
-		return ($this->Total()->getAmount() - $this->TotalPaid()->getAmount()) <= 0;
+
+		// Check if total/subtotal aren't zero
+		if ($this->Total()->getAmount() > 0 && $this->SubTotal()->getAmount() > 0) {
+			return ($this->Total()->getAmount() - $this->TotalPaid()->getAmount()) <= 0;
+		}
+
+		return false;
 	}
 	
 	/**
