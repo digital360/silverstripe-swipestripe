@@ -91,7 +91,7 @@ class OrderForm extends Form {
 					new LiteralField(
 						'AccountInfo', 
 						"
-						<p class=\"alert alert-info\">
+						<p class=\"alert alert-info highlight\">
 							<strong class=\"alert-heading\">$note</strong>
 							$passwd <br /><br />
 							$mber
@@ -177,8 +177,11 @@ class OrderForm extends Form {
 	}
 
 	public function createActions() {
+		$proceedButton = new FormAction('process', _t('CheckoutPage.PROCEED_TO_PAY', 'Proceed to pay'));
+		$proceedButton->setDisabled(true);
+
 		$actions = FieldList::create(
-			new FormAction('process', _t('CheckoutPage.PROCEED_TO_PAY', 'Proceed to pay'))
+			$proceedButton
 		);
 
 		$this->extend('updateActions', $actions);
