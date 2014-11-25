@@ -121,8 +121,19 @@ class CheckoutPage_Controller extends Page_Controller {
 	 */
 	function index() {
 		
-		//Update stock levels
-		//Order::delete_abandoned();
+		// Update stock levels
+		// Order::delete_abandoned();
+
+		// Do not allow on page unless
+		// something's in the cart
+		$currentOrder = Cart::get_current_order();
+
+		// Do not allow the user to get 
+		// to the checkout page if they 
+		// don't have any items in the cart
+		if ($currentOrder->Items() == null || $currentOrder->Items()->count() == 0) {
+			return $this->redirectBack();
+		}
 
 		Requirements::css('swipestripe/css/Shop.css');
 
@@ -147,5 +158,4 @@ class CheckoutPage_Controller extends Page_Controller {
 
 		return $form;
 	}
-
 }
