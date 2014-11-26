@@ -183,13 +183,19 @@ class ProductForm extends Form {
 				$this->getQuantity(), 
 				$this->getOptions()
 		);
+
 		
 		//Show feedback if redirecting back to the Product page
 		if (!$this->getRequest()->requestVar('Redirect')) {
 			$cartPage = DataObject::get_one('CartPage');
 			$message = _t('ProductForm.PRODUCT_ADDED', 'The product was added to your cart.');
 			if ($cartPage->exists()) {
-				$message = 'The product was added to <a href="' . $cartPage->Link() . '">your cart.';
+				$productTitle = SaleableProductPage::get()->byID($data['ProductID'])->getTitle();
+				if($this->getQuantity() > 1) {
+					$message = $this->getQuantity() . ' ' . $productTitle . 's were added to <a href="' . $cartPage->Link() . '">your cart.';
+				} else {
+					$message = $this->getQuantity() . ' ' . $productTitle . ' was added to <a href="' . $cartPage->Link() . '">your cart.';
+				}
 			}
 			$form->sessionMessage(
 				DBField::create_field("HTMLText", $message),

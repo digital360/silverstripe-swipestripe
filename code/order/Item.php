@@ -166,6 +166,12 @@ class Item extends DataObject {
 	function Product() {
 		return Versioned::get_version('Product', $this->ProductID, $this->ProductVersion);
 	}
+
+	function Image() {
+		$image = Versioned::get_version('SaleableProductPage', $this->ProductID, $this->ProductVersion)->Images()->first();
+		// $image = $image->generateSetWidth(20);
+		return $image; 
+	}
 	
 	/**
 	 * Validate this Item to make sure it can be added to a cart.
