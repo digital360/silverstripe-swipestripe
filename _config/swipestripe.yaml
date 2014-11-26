@@ -5,6 +5,7 @@ name: SwipeStripe
 Director:
   rules:
     'product//$ID!/$Action': 'Product_Controller'
+    'checkout//order//$ID' : 'CheckoutPage_Controller'
 
 Modifier:
   Enabled:
