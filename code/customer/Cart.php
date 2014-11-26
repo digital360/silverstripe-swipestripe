@@ -83,11 +83,23 @@ class Cart extends Extension {
 	 * Updates timestamp LastActive on the order, called on every page request. 
 	 */
 	function onBeforeInit() {
-
 		$orderID = Session::get('Cart.OrderID');
 		if ($orderID && $order = DataObject::get_by_id('Order', $orderID)) {
 			$order->LastActive = SS_Datetime::now()->getValue();
+
+			// Get current logged in member
+			$member = Customer::currentUser() ? Customer::currentUser() : singleton('Customer');
+
+			// If the member logs in, save the 
+			// order to that member
+			if ($member->exists()) {
+				$order->OrderedOn = SS_Datetime::now()->getValue();
+				$order->MemberID = $member->ID;
+			}
+
 			$order->write();
 		}
+
+
 	}
 }
