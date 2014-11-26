@@ -154,7 +154,12 @@ class RepayForm extends Form {
 		$errors = $this->getValidator()->getErrors();
 
 		if (!empty($errors)) {
-			$this->sessionMessage($errors, 'bad');
+			if (!is_array($errors)) {
+				$this->sessionMessage($errors, 'bad');
+			} else {
+				$this->sessionMessage('Issues have occured with the form below.  Please rectify before continuing.', 'bad');
+			}
+
 			return false;
 		} else {
 
