@@ -109,9 +109,13 @@ class CheckoutPage_Controller extends Page_Controller {
 
 	private static $allowed_actions = array (
 		'index',
-		'OrderForm'
+		'OrderForm',
+		'order'
 	);
 	
+	// public function init() {
+	// 	ddd($request->param('ID'));
+	// }
 	/**
 	 * Include some CSS and javascript for the checkout page
 	 * 
@@ -119,7 +123,7 @@ class CheckoutPage_Controller extends Page_Controller {
 	 * 
 	 * @return Array Contents for page rendering
 	 */
-	function index() {
+	function index($request) {
 		
 		// Update stock levels
 		// Order::delete_abandoned();
@@ -137,10 +141,57 @@ class CheckoutPage_Controller extends Page_Controller {
 
 		Requirements::css('swipestripe/css/Shop.css');
 
-		return array( 
-			 'Content' => $this->Content, 
-			 'Form' => $this->OrderForm()
-		);
+		return $this->renderOrderForm();
+	}
+
+	/**
+	 * Add order into checkout session
+	 * Assumed: clicked from account page
+	 *
+	 * @see Order::Link()
+	 * 
+	 * @param  [type] $request [description]
+	 * @return [type]          [description]
+	 */
+	public function order($request) {
+
+		// Get current user
+		$member = Customer::currentUser();
+		$orderID = $request->param('ID');
+
+		if (!empty($member) || $member === true) {
+			if ($member->exists()) {
+
+				// Get order for ID passed
+				$order = Order::get()->filter('ID', $orderID)->first();
+
+				// Check if this order belongs to 
+				// this customer
+				
+				if (!empty($order)) {
+					if ($order->canView($member)) {
+						// Add order to session
+						$currentSessionOrder = Cart::get_current_order();
+
+						// Remove any current order in the session
+						// TODO: Do we want to save the current cart??
+						$currentSessionOrder->delete();
+
+						Session::set('Cart.OrderID', $orderID);
+					} else {
+						return $this->httpError(403, _t('AccountPage.CANNOT_VIEW_ORDER', 'You cannot view orders that do not belong to you.'));
+					}
+				} else {
+					return $this->httpError(403, _t('AccountPage.NO_ORDER_EXISTS', 'Order does not exist.'));
+				}
+			} else {
+				return $this->redirect('Security/login?BackURL=' . urlencode('/checkout/order/' . $orderID));
+			}
+
+			return $this->renderOrderForm();
+		} else {
+			return $this->redirect('Security/login?BackURL=' . urlencode('/checkout/order/' . $orderID));
+		}
 	}
 
 	function OrderForm() {
@@ -157,5 +208,12 @@ class CheckoutPage_Controller extends Page_Controller {
 		$form->populateFields();
 
 		return $form;
+	}
+
+	private function renderOrderForm() {
+		return array( 
+			 'Content' => $this->Content, 
+			 'Form' => $this->OrderForm()
+		);
 	}
 }
