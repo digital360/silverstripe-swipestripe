@@ -67,24 +67,26 @@ class RepayForm extends Form {
 		$paymentFields = CompositeField::create()->setName('PaymentFields');
 
 		$source = array();
+		// Check if order has been paid
+		if (strtolower($order->PaymentStatus) == 'unpaid') {
+			// Add a default field
+			$source['none'] = 'Select Payment Method';
+			
+			foreach ($supported_methods as $methodName) {
+				$methodConfig = PaymentFactory::get_factory_config($methodName);
+				$source[$methodName] = $methodConfig['title'];
+			}
 
-		// Add a default field
-		$source['none'] = 'Select Payment Method';
-		
-		foreach ($supported_methods as $methodName) {
-			$methodConfig = PaymentFactory::get_factory_config($methodName);
-			$source[$methodName] = $methodConfig['title'];
+			$paymentFields->push(new HeaderField(_t('CheckoutPage.PAYMENT',"Payment"), 3));
+			$paymentFields->push(LiteralField::create('RepayLit', "<p>Process a payment for the oustanding amount: $outstanding</p>"));
+
+			$methods = new DropDownField('PaymentMethod', 'Select Payment Method', $source);
+			$methods->setCustomValidationMessage(_t('CheckoutPage.SELECT_PAYMENT_METHOD',"Please select a payment method."));
+			$methods->addExtraClass('fields');
+			$paymentFields->push($methods);
+
+			Requirements::javascript('digital360-payments/scripts/digital360-payments.js');
 		}
-
-		$paymentFields->push(new HeaderField(_t('CheckoutPage.PAYMENT',"Payment"), 3));
-		$paymentFields->push(LiteralField::create('RepayLit', "<p>Process a payment for the oustanding amount: $outstanding</p>"));
-
-		$methods = new DropDownField('PaymentMethod', 'Select Payment Method', $source);
-		$methods->setCustomValidationMessage(_t('CheckoutPage.SELECT_PAYMENT_METHOD',"Please select a payment method."));
-		$methods->addExtraClass('fields');
-		$paymentFields->push($methods);
-
-		Requirements::javascript('digital360-payments/scripts/digital360-payments.js');
 
 		$fields = new FieldList(
 			$paymentFields
@@ -97,9 +99,15 @@ class RepayForm extends Form {
 	}
 
 	public function createActions() {
-		$actions = FieldList::create(
-			new FormAction('process', _t('CheckoutPage.PROCEED_TO_PAY',"Proceed to pay"))
-		);
+		$actions = new FieldList();
+
+		// Check if an order exists
+		if (isset($this->order) && !empty($this->order)) {
+			// Check if order has been paid
+			if (strtolower($this->order->PaymentStatus) == 'unpaid') {
+				$actions->push(new FormAction('process', _t('CheckoutPage.PROCEED_TO_PAY',"Proceed to pay")));
+			}
+		}
 
 		$this->extend('updateActions', $actions);
 		$actions->setForm($this);
