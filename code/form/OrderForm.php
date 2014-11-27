@@ -49,12 +49,43 @@ class OrderForm extends Form {
 	/**
 	 * Set up current form errors in session to
 	 * the current form if appropriate.
+	 *
+	 * NOTE: At the moment, SilverStripe populates
+	 * the 'confirm password' with the 'password'
+	 * so it's overloaded for now to rectify.
 	 */
 	public function setupFormErrors() {
 
-		//Only run when fields exist
+		// Only run when fields exist
 		if ($this->fields->exists()) {
-			parent::setupFormErrors();
+			$errorInfo = Session::get("FormInfo.{$this->FormName()}");
+
+			if(isset($errorInfo['errors']) && is_array($errorInfo['errors'])) {
+
+				foreach($errorInfo['errors'] as $error) {
+					$field = $this->fields->dataFieldByName($error['fieldName']);
+
+					if(!$field) {
+						$errorInfo['message'] = $error['message'];
+						$errorInfo['type'] = $error['messageType'];
+					} else {
+						$field->setError($error['message'], $error['messageType']);
+					}				
+				}
+
+				// load data in from previous submission upon error
+				if(isset($errorInfo['data'])) {
+					// Unset Payment Method and Password fields
+					// as we don't want these re-populated
+					unset($errorInfo['data']['PaymentMethod']);
+					unset($errorInfo['data']['Password']);
+					$this->loadDataFrom($errorInfo['data']);
+				}
+			}
+
+			if(isset($errorInfo['message']) && isset($errorInfo['type'])) {
+				$this->setMessage($errorInfo['message'], $errorInfo['type']);
+			}
 		}
 	}
 
@@ -76,6 +107,9 @@ class OrderForm extends Form {
 				'</a>'
 			);
 
+			$passwordField = new ConfirmedPasswordField('Password', _t('CheckoutPage.PASSWORD', "Password"));
+			$passwordField->minLength = 6;
+
 			$personalFields = CompositeField::create(
 				new HeaderField(_t('CheckoutPage.ACCOUNT',"Account"), 3),
 				new LiteralField('instruction', 'Please create an account.'),
@@ -85,7 +119,7 @@ class OrderForm extends Form {
 				),
 				new CompositeField(
 					new FieldGroup(
-						new ConfirmedPasswordField('Password', _t('CheckoutPage.PASSWORD', "Password"))
+						$passwordField
 					)
 				),
 				new CompositeField(
@@ -98,7 +132,7 @@ class OrderForm extends Form {
 						"
 					)
 				)
-			)->setID('PersonalDetails')->setName('PersonaDetails');
+			)->setID('PersonalDetails')->setName('PersonalDetails');
 		}
 
 		//Order item fields
@@ -245,7 +279,7 @@ class OrderForm extends Form {
 	 */
 	public function validate(){
 		parent::validate();
-		
+
 		// Check for errors thrown
 		// to specific fields
 		// (usually by the requiredFields 
@@ -253,7 +287,12 @@ class OrderForm extends Form {
 		$errors = $this->getValidator()->getErrors();
 
 		if (!empty($errors)) {
-			$this->sessionMessage($errors, 'bad');
+			if (!is_array($errors)) {
+				$this->sessionMessage($errors, 'bad');
+			} else {
+				$this->sessionMessage('Issues have occured with the form below.  Please rectify before continuing.', 'bad');
+			}
+
 			return false;
 		} else {
 

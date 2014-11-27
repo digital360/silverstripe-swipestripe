@@ -106,7 +106,8 @@ class CartPage_Controller extends Page_Controller {
 
 	private static $allowed_actions = array (
 		'index',
-		'CartForm'
+		'CartForm',
+		'ClearAbandoned'
 	);
 	
 	/**
@@ -140,4 +141,11 @@ class CartPage_Controller extends Page_Controller {
 		)->disableSecurityToken();
 	}
 
+	/**
+	 * Route to clear abandoned orders.
+	 * To be used via a cron job
+	 */
+	public function ClearAbandoned() {
+		Order::delete_abandoned();
+	}
 }

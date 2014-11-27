@@ -435,6 +435,9 @@ class Order extends DataObject implements PermissionProvider {
 	
 	/**
 	 * Generate the URL for viewing this order on the frontend
+	 *
+	 * Will default to the account repay page unless the order
+	 * is still in the cart
 	 * 
 	 * @see PaypalExpressCheckoutaPayment_Handler::doRedirect()
 	 * @return String URL for viewing this order
@@ -442,6 +445,9 @@ class Order extends DataObject implements PermissionProvider {
 	public function Link() {
 		//get the account page and go to it
 		$account = DataObject::get_one('AccountPage');
+		if (strtolower($this->Status) == 'cart') {
+			return DataObject::get_one('CheckoutPage')->Link() . 'order/' . $this->ID;
+		}
 		return $account->Link()."order/$this->ID";
 	}
 
@@ -512,7 +518,13 @@ class Order extends DataObject implements PermissionProvider {
 	 * @return Boolean
 	 */
 	public function getPaid() {
-		return ($this->Total()->getAmount() - $this->TotalPaid()->getAmount()) <= 0;
+
+		// Check if total/subtotal aren't zero
+		if ($this->Total()->getAmount() > 0 && $this->SubTotal()->getAmount() > 0) {
+			return ($this->Total()->getAmount() - $this->TotalPaid()->getAmount()) <= 0;
+		}
+
+		return false;
 	}
 	
 	/**

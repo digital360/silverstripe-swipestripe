@@ -44,11 +44,43 @@ class RepayForm extends Form {
 	/**
 	 * Set up current form errors in session to
 	 * the current form if appropriate.
+	 *
+	 * NOTE: At the moment, SilverStripe populates
+	 * the 'confirm password' with the 'password'
+	 * so it's overloaded for now to rectify.
 	 */
-	public function setupFormErrors() {	
-		//Only run when fields exist
+	public function setupFormErrors() {
+
+		// Only run when fields exist
 		if ($this->fields->exists()) {
-			parent::setupFormErrors();
+			$errorInfo = Session::get("FormInfo.{$this->FormName()}");
+
+			if(isset($errorInfo['errors']) && is_array($errorInfo['errors'])) {
+
+				foreach($errorInfo['errors'] as $error) {
+					$field = $this->fields->dataFieldByName($error['fieldName']);
+
+					if(!$field) {
+						$errorInfo['message'] = $error['message'];
+						$errorInfo['type'] = $error['messageType'];
+					} else {
+						$field->setError($error['message'], $error['messageType']);
+					}				
+				}
+
+				// load data in from previous submission upon error
+				if(isset($errorInfo['data'])) {
+					// Unset Payment Method and Password fields
+					// as we don't want these re-populated
+					unset($errorInfo['data']['PaymentMethod']);
+					unset($errorInfo['data']['Password']);
+					$this->loadDataFrom($errorInfo['data']);
+				}
+			}
+
+			if(isset($errorInfo['message']) && isset($errorInfo['type'])) {
+				$this->setMessage($errorInfo['message'], $errorInfo['type']);
+			}
 		}
 	}
 
@@ -67,24 +99,26 @@ class RepayForm extends Form {
 		$paymentFields = CompositeField::create()->setName('PaymentFields');
 
 		$source = array();
+		// Check if order has been paid
+		if (strtolower($order->PaymentStatus) == 'unpaid') {
+			// Add a default field
+			$source['none'] = 'Select Payment Method';
+			
+			foreach ($supported_methods as $methodName) {
+				$methodConfig = PaymentFactory::get_factory_config($methodName);
+				$source[$methodName] = $methodConfig['title'];
+			}
 
-		// Add a default field
-		$source['none'] = 'Select Payment Method';
-		
-		foreach ($supported_methods as $methodName) {
-			$methodConfig = PaymentFactory::get_factory_config($methodName);
-			$source[$methodName] = $methodConfig['title'];
+			$paymentFields->push(new HeaderField(_t('CheckoutPage.PAYMENT',"Payment"), 3));
+			$paymentFields->push(LiteralField::create('RepayLit', "<p>Process a payment for the oustanding amount: $outstanding</p>"));
+
+			$methods = new DropDownField('PaymentMethod', 'Select Payment Method', $source);
+			$methods->setCustomValidationMessage(_t('CheckoutPage.SELECT_PAYMENT_METHOD',"Please select a payment method."));
+			$methods->addExtraClass('fields');
+			$paymentFields->push($methods);
+
+			Requirements::javascript('digital360-payments/scripts/digital360-payments.js');
 		}
-
-		$paymentFields->push(new HeaderField(_t('CheckoutPage.PAYMENT',"Payment"), 3));
-		$paymentFields->push(LiteralField::create('RepayLit', "<p>Process a payment for the oustanding amount: $outstanding</p>"));
-
-		$methods = new DropDownField('PaymentMethod', 'Select Payment Method', $source);
-		$methods->setCustomValidationMessage(_t('CheckoutPage.SELECT_PAYMENT_METHOD',"Please select a payment method."));
-		$methods->addExtraClass('fields');
-		$paymentFields->push($methods);
-
-		Requirements::javascript('digital360-payments/scripts/digital360-payments.js');
 
 		$fields = new FieldList(
 			$paymentFields
@@ -97,9 +131,15 @@ class RepayForm extends Form {
 	}
 
 	public function createActions() {
-		$actions = FieldList::create(
-			new FormAction('process', _t('CheckoutPage.PROCEED_TO_PAY',"Proceed to pay"))
-		);
+		$actions = new FieldList();
+
+		// Check if an order exists
+		if (isset($this->order) && !empty($this->order)) {
+			// Check if order has been paid
+			if (strtolower($this->order->PaymentStatus) == 'unpaid') {
+				$actions->push(new FormAction('process', _t('CheckoutPage.PROCEED_TO_PAY',"Proceed to pay")));
+			}
+		}
 
 		$this->extend('updateActions', $actions);
 		$actions->setForm($this);
@@ -146,7 +186,12 @@ class RepayForm extends Form {
 		$errors = $this->getValidator()->getErrors();
 
 		if (!empty($errors)) {
-			$this->sessionMessage($errors, 'bad');
+			if (!is_array($errors)) {
+				$this->sessionMessage($errors, 'bad');
+			} else {
+				$this->sessionMessage('Issues have occured with the form below.  Please rectify before continuing.', 'bad');
+			}
+
 			return false;
 		} else {
 

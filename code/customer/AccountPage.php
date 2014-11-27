@@ -154,23 +154,31 @@ class AccountPage_Controller extends Page_Controller {
 		Requirements::css('swipestripe/css/Shop.css');
 
 		if ($orderID = $request->param('ID')) {
-			
-			$member = Customer::currentUser();
-			$order = Order::get()
-				->where("\"Order\".\"ID\" = " . Convert::raw2sql($orderID))
-				->First();
 
-			if (!$order || !$order->exists()) {
-				return $this->httpError(403, _t('AccountPage.NO_ORDER_EXISTS', 'Order does not exist.'));
+			// Cast value to int to remove strings
+			$orderID = (int) $orderID;
+
+			// Check if Order ID is greater then zero (ie. exists)
+			if ($orderID != 0) {
+				$member = Customer::currentUser();
+				$order = Order::get()
+					->where("\"Order\".\"ID\" = " . Convert::raw2sql($orderID))
+					->First();
+
+				if (!$order || !$order->exists()) {
+					return $this->httpError(403, _t('AccountPage.NO_ORDER_EXISTS', 'Order does not exist.'));
+				}
+
+				if (!$order->canView($member)) {
+					return $this->httpError(403, _t('AccountPage.CANNOT_VIEW_ORDER', 'You cannot view orders that do not belong to you.'));
+				}
+
+				return array(
+					'Order' => $order
+				);
+			} else {
+				return $this->httpError(403, _t('AccountPage.CANNOT_VIEW_ORDER', 'Order does not exist.'));
 			}
-
-			if (!$order->canView($member)) {
-				return $this->httpError(403, _t('AccountPage.CANNOT_VIEW_ORDER', 'You cannot view orders that do not belong to you.'));
-			}
-
-			return array(
-				'Order' => $order
-			);
 		}
 		else {
 			return $this->httpError(403, _t('AccountPage.NO_ORDER_EXISTS', 'Order does not exist.'));
@@ -182,29 +190,37 @@ class AccountPage_Controller extends Page_Controller {
 		Requirements::css('swipestripe/css/Shop.css');
 
 		if ($orderID = $request->param('ID')) {
-			
-			$member = Customer::currentUser();
-			$order = Order::get()
-				->where("\"Order\".\"ID\" = " . Convert::raw2sql($orderID))
-				->First();
 
-			if (!$order || !$order->exists()) {
+			// Cast value to int to remove strings
+			$orderID = (int) $orderID;
+
+			// Check if Order ID is greater then zero (ie. exists)
+			if ($orderID != 0) {
+				$member = Customer::currentUser();
+				$order = Order::get()
+					->where("\"Order\".\"ID\" = " . Convert::raw2sql($orderID))
+					->First();
+
+				if (!$order || !$order->exists()) {
+					return $this->httpError(403, _t('AccountPage.NO_ORDER_EXISTS', 'Order does not exist.'));
+				}
+
+				if (!$order->canView($member)) {
+					return $this->httpError(403, _t('AccountPage.CANNOT_VIEW_ORDER', 'You cannot view orders that do not belong to you.'));
+				}
+				
+				Session::set('Repay', array(
+					'OrderID' => $order->ID
+				));
+				Session::save();
+				
+				return array(
+					'Order' => $order,
+					'RepayForm' => $this->RepayForm()
+				);
+			} else {
 				return $this->httpError(403, _t('AccountPage.NO_ORDER_EXISTS', 'Order does not exist.'));
 			}
-
-			if (!$order->canView($member)) {
-				return $this->httpError(403, _t('AccountPage.CANNOT_VIEW_ORDER', 'You cannot view orders that do not belong to you.'));
-			}
-			
-			Session::set('Repay', array(
-				'OrderID' => $order->ID
-			));
-			Session::save();
-			
-			return array(
-				'Order' => $order,
-				'RepayForm' => $this->RepayForm()
-			);
 		}
 		else {
 			return $this->httpError(403, _t('AccountPage.NO_ORDER_EXISTS', 'Order does not exist.'));
@@ -222,6 +238,5 @@ class AccountPage_Controller extends Page_Controller {
 		$form->populateFields();
 
 		return $form;
-	}
-	
+	}	
 }
