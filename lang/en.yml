@@ -56,7 +56,7 @@ en:
     YOUR_ORDER: 'Your Order'
   CheckoutPage:
     ACCOUNT: Account
-    ALREADY_MEMBER: 'Please s %s log in. %s'
+    ALREADY_MEMBER: 'Already have an acocunt? Please s %s log in. %s'
     DESCRIPTION: 'Generic content page'
     EMAIL: Email
     MEMBER_ALREADY_EXISTS: 'Sorry, a member already exists with that email address. If this is your email address, please log in first before placing your order.'

@@ -102,7 +102,7 @@ class OrderForm extends Form {
 			$note = _t('CheckoutPage.NOTE','NOTE:');
 			$passwd = _t('CheckoutPage.PLEASE_CHOOSE_PASSWORD','Please choose a password, so you can login and check your order history in the future.');
 			$mber = sprintf(
-				_t('CheckoutPage.ALREADY_MEMBER', 'If you are already a member please %s log in. %s'), 
+				'If you are already a member please %s log in. %s', 
 				"<a href=\"Security/login?BackURL=$link\">", 
 				'</a>'
 			);
@@ -112,6 +112,7 @@ class OrderForm extends Form {
 
 			$personalFields = CompositeField::create(
 				new HeaderField(_t('CheckoutPage.ACCOUNT',"Account"), 3),
+				new LiteralField('instruction', 'Please create an account.'),
 				new CompositeField(
 					EmailField::create('Email', _t('CheckoutPage.EMAIL', 'Email'))
 						->setCustomValidationMessage(_t('CheckoutPage.PLEASE_ENTER_EMAIL_ADDRESS', "Please enter your email address."))
@@ -125,9 +126,7 @@ class OrderForm extends Form {
 					new LiteralField(
 						'AccountInfo', 
 						"
-						<p class=\"alert alert-info\">
-							<strong class=\"alert-heading\">$note</strong>
-							$passwd <br /><br />
+						<p class=\"alert alert-info highlight\">
 							$mber
 						</p>
 						"
