@@ -21,9 +21,9 @@
 			updateCart: function() {
 				var self = this;
 				var values = this.serialize();
-				
+
 				$.ajax({
-					url: window.location.pathname + '/OrderForm/update',
+					url: 'checkout/OrderForm/update',
 					type: 'POST',
 					data: values,
 					beforeSend: function() {
