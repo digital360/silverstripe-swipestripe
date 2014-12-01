@@ -4,7 +4,7 @@
 		$Title
 	</td>
 
-	<td class="totals-column">
+	<td class="totals-column" aria-label="Shipping">
 		<div id="$Name" class="field $Type $extraClass">
 			$titleBlock
 			<div class="middleColumn">
