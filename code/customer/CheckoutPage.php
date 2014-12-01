@@ -112,10 +112,7 @@ class CheckoutPage_Controller extends Page_Controller {
 		'OrderForm',
 		'order'
 	);
-	
-	// public function init() {
-	// 	ddd($request->param('ID'));
-	// }
+
 	/**
 	 * Include some CSS and javascript for the checkout page
 	 * 
@@ -167,8 +164,11 @@ class CheckoutPage_Controller extends Page_Controller {
 
 				// Check if this order belongs to 
 				// this customer
-				
 				if (!empty($order)) {
+
+					// Get account page URL for this order
+					$accountPageURL = DataObject::get_one('AccountPage')->Link() . 'order/' . $orderID;
+
 					if ($order->canView($member)) {
 						// Add order to session
 						$currentSessionOrder = Cart::get_current_order();
@@ -181,6 +181,18 @@ class CheckoutPage_Controller extends Page_Controller {
 					} else {
 						return $this->httpError(403, _t('AccountPage.CANNOT_VIEW_ORDER', 'You cannot view orders that do not belong to you.'));
 					}
+
+					// Check if the order has already been paid
+					if ($order->getPaid()) {
+						return $this->redirect($accountPageURL);
+					}
+
+					// Check if the order is still in the cart pending
+					// payment
+					if ($order->Status != 'Cart') {
+						return $this->redirect($accountPageURL);
+					}
+
 				} else {
 					return $this->httpError(403, _t('AccountPage.NO_ORDER_EXISTS', 'Order does not exist.'));
 				}
