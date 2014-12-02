@@ -48,5 +48,33 @@
 			}
 		});
 
+// ----------------------------------------------------------- Setup Create Account Fields
+
+		var createAccount = $("#OrderForm_OrderForm_CreateAccount");
+
+		function getCreateAccountFields(){}
+		var getCreateAccountFields = new getCreateAccountFields();
+
+		getCreateAccountFields.getFields = function() {
+			
+			$.ajax({
+				type: 'GET',
+				url: '/CheckoutPage_Controller/OrderForm/getAccountFields/',
+				complete: function(data) {
+					//$(".payment-details .loader").hide();
+
+					if(data.responseText) {
+						console.log(data.responseText);
+						$(data.responseText).insertAfter("#OrderForm_OrderForm_CreateAccount");
+						return;
+					}
+
+					// $(".order-form .action").prop('disabled', 'disabled');
+					return;
+				}
+			});
+		}
+
+		createAccount.on('change', getCreateAccountFields.getFields);
 	});
 })(jQuery);

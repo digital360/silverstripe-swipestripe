@@ -10,7 +10,8 @@ class OrderForm extends Form {
 
 	private static $allowed_actions = array(
 		'process',
-		'update'
+		'update',
+		'getAccountFields'
 	);
 	
 	/**
@@ -89,6 +90,29 @@ class OrderForm extends Form {
 		}
 	}
 
+	public function getAccountFields() {
+		$validator = OrderForm_Validator::create(
+			'CreateAccount'
+		);
+
+		$passwordField = new ConfirmedPasswordField('Password', _t('CheckoutPage.PASSWORD', "Password"));
+		$passwordField->minLength = 6;
+
+		$fields = CompositeField::create(
+			new CompositeField(
+				new FieldGroup(
+					$passwordField
+				)
+			)
+		);
+
+		$validator->addRequiredField('Password');
+
+		return new FieldList(
+			$passwordField
+		);
+	}
+
 	public function createFields() {
 
 		$order = $this->order;
@@ -99,29 +123,17 @@ class OrderForm extends Form {
 
 			$link = $this->controller->Link();
 			
-			$note = _t('CheckoutPage.NOTE','NOTE:');
-			$passwd = _t('CheckoutPage.PLEASE_CHOOSE_PASSWORD','Please choose a password, so you can login and check your order history in the future.');
 			$mber = sprintf(
 				'If you are already a member please %s log in. %s', 
 				"<a href=\"Security/login?BackURL=$link\">", 
 				'</a>'
 			);
 
-			$passwordField = new ConfirmedPasswordField('Password', _t('CheckoutPage.PASSWORD', "Password"));
-			$passwordField->minLength = 6;
+			// $passwordField = new ConfirmedPasswordField('Password', _t('CheckoutPage.PASSWORD', "Password"));
+			// $passwordField->minLength = 6;
 
 			$personalFields = CompositeField::create(
-				new HeaderField(_t('CheckoutPage.ACCOUNT',"Account"), 3),
-				new LiteralField('instruction', 'Please create an account.'),
-				new CompositeField(
-					EmailField::create('Email', _t('CheckoutPage.EMAIL', 'Email'))
-						->setCustomValidationMessage(_t('CheckoutPage.PLEASE_ENTER_EMAIL_ADDRESS', "Please enter your email address."))
-				),
-				new CompositeField(
-					new FieldGroup(
-						$passwordField
-					)
-				),
+				new HeaderField(_t('CheckoutPage.ACCOUNT',"Contact Details"), 3),
 				new CompositeField(
 					new LiteralField(
 						'AccountInfo', 
@@ -131,8 +143,24 @@ class OrderForm extends Form {
 						</p>
 						"
 					)
-				)
+				),
+				//new LiteralField('instruction', 'Please create an account.'),
+				new CompositeField(
+					EmailField::create('Email', _t('CheckoutPage.EMAIL', 'Email'))
+						->setCustomValidationMessage(_t('CheckoutPage.PLEASE_ENTER_EMAIL_ADDRESS', "Please enter your email address."))
+				),
+				new CheckboxField('CreateAccount', 'Create account?', false)
 			)->setID('PersonalDetails')->setName('PersonalDetails');
+
+			if (isset($passwordField)) {
+				$personalFields->push(
+					new CompositeField(
+						new FieldGroup(
+							$passwordField
+						)
+					)
+				);
+			}
 		}
 
 		//Order item fields
@@ -228,10 +256,8 @@ class OrderForm extends Form {
 			'PaymentMethod'
 		);
 
-		if (!$this->customer->ID || $this->customer->Password == '') {
-			$validator->addRequiredField('Password');
-			$validator->addRequiredField('Email');
-		}
+		$validator->addRequiredField('Email');
+		$validator->addRequiredField('Password');
 
 		$this->extend('updateValidator', $validator);
 		$validator->setForm($this);
@@ -326,8 +352,20 @@ class OrderForm extends Form {
 
 		//Save or create a new customer/member
 		$member = Customer::currentUser() ? Customer::currentUser() : singleton('Customer');
-		if (!$member->exists()) {
+		// $existingCustomer = Customer::get()->filter('Email', $data['Email']);
+		// if ($existingCustomer && $existingCustomer->exists()) {
+		// 	$form->sessionMessage(
+		// 		_t('CheckoutPage.MEMBER_ALREADY_EXISTS', 'Sorry, a member already exists with that email address. If this is your email address, please log in first before placing your order.'),
+		// 		'bad'
+		// 	);
+		// 	$this->controller->redirectBack();
+		// 	return false;
+		// }
 
+		// Only create an account if the user
+		// chose to do so otherwise just create
+		// the order
+		if (isset($data['Password'])) { // && !$member->exists()) {
 			$existingCustomer = Customer::get()->filter('Email', $data['Email']);
 			if ($existingCustomer && $existingCustomer->exists()) {
 				$form->sessionMessage(
@@ -343,6 +381,20 @@ class OrderForm extends Form {
 			$member->write();
 			$member->addToGroupByCode('customers');
 			$member->logIn();
+		} else {
+			// Just store the customer as a customer and not a member
+			// $member = Member::create();
+			// $form->saveInto($member);
+			// $member->FirstName = $data['ShippingFirstName'];
+			// $member->Surname = $data['ShippingSurname'];
+			// $memberID = $member->write();
+
+			$member = Customer::create();
+			$form->saveInto($member);
+			$member->FirstName = $data['ShippingFirstName'];
+			$member->Surname = $data['ShippingSurname'];
+			// $member->MemberID = $memberID;
+			$member->write();
 		}
 
 		// Save the order
@@ -388,7 +440,11 @@ class OrderForm extends Form {
 				// If validation succeeded, 
 				// continue with saving the order
 				$form->saveInto($order);
-				$order->MemberID = $member->ID;
+				
+				if (isset($data['Password']))
+					$order->MemberID = $member->MemberID;
+
+				$order->CustomerID = $member->ID;
 				$order->Status = Order::STATUS_PENDING;
 				$order->OrderedOn = SS_Datetime::now()->getValue();
 				$order->write();
@@ -399,7 +455,11 @@ class OrderForm extends Form {
 					$update->Note = $notes;
 					$update->Visible = true;
 					$update->OrderID = $order->ID;
-					$update->MemberID = $member->ID;
+
+					if (isset($data['Password']))
+						$update->MemberID = $member->MemberID;
+
+					$update->CustomerID = $member->ID;
 					$update->write();
 				}
 

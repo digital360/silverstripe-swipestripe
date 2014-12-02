@@ -7,10 +7,13 @@
  * @package swipestripe
  * @subpackage customer
  */
-class Customer extends Member {
+class Customer extends DataObject {
 
 	private static $db = array(
-		'Code' => 'Int' //Just to trigger creating a Customer table
+		'Code' => 'Int', //Just to trigger creating a Customer table
+		'Email' => 'Varchar(255)',
+		'FirstName' => 'Varchar(255)',
+		'Surname' => 'Varchar(255)'
 	);
 	
 	/**
@@ -22,7 +25,12 @@ class Customer extends Member {
 		'Orders' => 'Order'
 	);
 
+	private static $has_one = array(
+		'Member' => 'Member'
+	);
+
 	private static $searchable_fields = array(
+		'FirstName',
 		'Surname',
 		'Email'
 	);
@@ -122,5 +130,18 @@ class Customer extends Member {
 		if($id) {
 			return DataObject::get_one("Customer", "\"Member\".\"ID\" = $id");
 		}
+	}
+
+	public static function createCustomer() {
+		$args = func_get_args();
+
+		// Class to create should be the calling class if not Object,
+		// otherwise the first parameter
+		$class = get_called_class();
+		if($class == 'Object') $class = array_shift($args);
+
+		$class = self::getCustomClass($class);
+
+		return Injector::inst()->createWithArgs($class, $args);
 	}
 }

@@ -133,6 +133,14 @@ class CheckoutPage_Controller extends Page_Controller {
 		// to the checkout page if they 
 		// don't have any items in the cart
 		if ($currentOrder->Items() == null || $currentOrder->Items()->count() == 0) {
+			// Redirect to home page if already on checkout
+			$redirectHeaders = $this->redirectBack()->getHeaders();
+			$absoluteCheckoutURL = Director::absoluteURL(DataObject::get_one('CheckoutPage')->Link());
+
+			if ($redirectHeaders['Location'] == $absoluteCheckoutURL) {
+				return $this->redirect('/');
+			}
+
 			return $this->redirectBack();
 		}
 

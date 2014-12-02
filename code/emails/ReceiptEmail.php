@@ -12,7 +12,7 @@ class ReceiptEmail extends ProcessedEmail {
 	/**
 	 * Create the new receipt email.
 	 * 
-	 * @param Member $customer
+	 * @param Customer $customer
 	 * @param Order $order
 	 * @param String $from
 	 * @param String $to
@@ -22,8 +22,8 @@ class ReceiptEmail extends ProcessedEmail {
 	 * @param String $cc
 	 * @param String $bcc
 	 */
-	public function __construct(Member $customer, Order $order, $from = null, $to = null, $subject = null, $body = null, $bounceHandlerURL = null, $cc = null, $bcc = null) {
-
+	public function __construct(Customer $customer, Order $order, $from = null, $to = null, $subject = null, $body = null, $bounceHandlerURL = null, $cc = null, $bcc = null) {
+		ddd($customer->Email);
 		$siteConfig = ShopConfig::get()->first();
 		if ($customer->Email) $this->to = $customer->Email; 
 		if ($siteConfig->ReceiptSubject) $this->subject = $siteConfig->ReceiptSubject . ' - Order #' . $order->ID;

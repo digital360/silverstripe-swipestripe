@@ -6,6 +6,7 @@ Director:
   rules:
     'product//$ID!/$Action': 'Product_Controller'
     'checkout//order//$ID' : 'CheckoutPage_Controller'
+    'get//getAccountFields': 'OrderForm'
 
 Modifier:
   Enabled:

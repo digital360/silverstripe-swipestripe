@@ -13,7 +13,7 @@ class NotificationEmail extends ProcessedEmail {
 	/**
 	 * Create the new notification email.
 	 * 
-	 * @param Member $customer
+	 * @param Customer $customer
 	 * @param Order $order
 	 * @param String $from
 	 * @param String $to
@@ -23,14 +23,15 @@ class NotificationEmail extends ProcessedEmail {
 	 * @param String $cc
 	 * @param String $bcc
 	 */
-	public function __construct(Member $customer, Order $order, $from = null, $to = null, $subject = null, $body = null, $bounceHandlerURL = null, $cc = null, $bcc = null) {
+	public function __construct(Customer $customer, Order $order, $from = null, $to = null, $subject = null, $body = null, $bounceHandlerURL = null, $cc = null, $bcc = null) {
 		
 		$siteConfig = ShopConfig::get()->first();
 		if ($siteConfig->NotificationTo) $this->to = $siteConfig->NotificationTo; 
 		if ($siteConfig->NotificationSubject) $this->subject = $siteConfig->NotificationSubject . ' - Order #'.$order->ID;
 		if ($siteConfig->NotificationBody) $this->body = $siteConfig->NotificationBody;
 		
-		if ($customer->Email) $this->from = $customer->Email; 
+		if ($customer->Email) $this->from = $customer->Email;
+
 		elseif (Email::getAdminEmail()) $this->from = Email::getAdminEmail();
 		else $this->from = 'no-reply@' . $_SERVER['HTTP_HOST'];
 		

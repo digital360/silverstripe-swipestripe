@@ -116,7 +116,7 @@ class Order extends DataObject implements PermissionProvider {
 	 * @var Array
 	 */
 	private static $has_one = array(
-		'Member' => 'Customer'
+		'Customer' => 'Customer'
 	);
 
 	/*
@@ -139,8 +139,8 @@ class Order extends DataObject implements PermissionProvider {
 	private static $summary_fields = array(
 		'ID' => 'Order No',
 		'OrderedOn' => 'Ordered On',
-		'Member.Name' => 'Customer',
-		'Member.Email' => 'Email',
+		'Customer.Name' => 'Customer',
+		'Customer.Email' => 'Email',
 		'SummaryOfTotal' => 'Total',
 		'Status' => 'Status'
 	);
@@ -156,11 +156,11 @@ class Order extends DataObject implements PermissionProvider {
 			'filter' => 'PartialMatchFilter',
 			'title' => 'Order Number'
 		),
-		'Member.Surname' => array(
+		'Customer.Surname' => array(
 			'title' => 'Customer Surname',
 			'filter' => 'PartialMatchFilter'
 		),
-		'Member.Email' => array(
+		'Customer.Email' => array(
 			'title' => 'Customer Email',
 			'filter' => 'PartialMatchFilter'
 		),
@@ -364,14 +364,13 @@ class Order extends DataObject implements PermissionProvider {
 	 * @see Payment_Extension::onAfterWrite()
 	 */
 	public function onAfterPayment() {
-
 		$this->Status = ($this->getPaid()) ? self::STATUS_PROCESSING :  self::STATUS_PENDING;
 		$this->PaymentStatus = ($this->getPaid()) ? 'Paid' : 'Unpaid';
 		$this->write();
-
-		ReceiptEmail::create($this->Member(), $this)
+		ddd($this->Customer()->Email);
+		ReceiptEmail::create($this->Customer(), $this)
 			->send();
-		NotificationEmail::create($this->Member(), $this)
+		NotificationEmail::create($this->Customer(), $this)
 			->send();
 
 		$this->extend('onAfterPayment');
@@ -393,7 +392,7 @@ class Order extends DataObject implements PermissionProvider {
 
 		//Override this in updateOrderCMSFields to change the order template in the CMS
 		$htmlSummary = $this->customise(array(
-			'MemberEmail' => $this->Member()->Email
+			'MemberEmail' => $this->Customer()->Email
 		))->renderWith('OrderAdmin');
 		$fields->addFieldToTab('Root.Order', new LiteralField('MainDetails', $htmlSummary));
 
