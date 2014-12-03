@@ -1,15 +1,22 @@
 <tr class="cart-item">
 	<td>
-		<% with $Item.Image.SetWidth(100) %>
-		<img src="{$URL}" alt="{$Caption}" class="product-image" />
-		<% end_with %>
 		<% if Item.Product.isPublished %>
-		<a href="$Item.Product.Link" target="_blank">$Item.Product.Title</a>
+			<% with $Item.Image.CroppedImage(100,100) %>
+			<div class="product-image">
+				<img src="{$URL}" alt="{$Caption}" />
+			</div>
+			<% end_with %>
+			<div class="product-info">
+				<a href="$Item.Product.Link" target="_blank">$Item.Product.Title</a>
+				<% if $Item.Product.ProductCode %><span>Product Code: {$Item.Product.ProductCode}</span><% end_if %>
+			</div>
 		<% else %>
 			$Item.Product.Title
 		<% end_if %>
+
 		<br />
 		$Item.SummaryOfOptions
+
 		<% if Message %>
 		<div class="message $MessageType">
 			$Message
