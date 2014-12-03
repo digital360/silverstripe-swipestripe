@@ -109,6 +109,7 @@ class OrderForm extends Form {
 
 			$passwordField = new ConfirmedPasswordField('Password', _t('CheckoutPage.PASSWORD', "Password"));
 			$passwordField->minLength = 6;
+			$passwordField->setAttribute('required', 'required');
 
 			$personalFields = CompositeField::create(
 				new CompositeField(
