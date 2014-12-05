@@ -44,6 +44,8 @@ class OrderForm extends Form {
 
 		$this->setTemplate('OrderForm');
 		$this->addExtraClass('order-form');
+
+		$this->setAttribute('data-eway-encrypt-key', 'epk-1A4058B9-38B0-4935-98AE-5D3FB69D2A04');
 	}
 
 	/**
