@@ -334,6 +334,9 @@ class OrderForm extends Form {
 			return $this->controller->redirectBack();
 		}
 
+		// Get current order
+		$order = Cart::get_current_order();
+
 		//Save or create a new customer/member
 		$member = Customer::currentUser() ? Customer::currentUser() : singleton('Customer');
 		if (!$member->exists()) {
@@ -350,13 +353,14 @@ class OrderForm extends Form {
 
 			$member = Customer::create();
 			$form->saveInto($member);
+			$member->FirstName = $order->ShippingFirstName;
+			$member->Surname = $order->ShippingSurname;
 			$member->write();
 			$member->addToGroupByCode('customers');
 			$member->logIn();
 		}
 
 		// Save the order
-		$order = Cart::get_current_order();
 		$items = $order->Items();
 
 		$order->onBeforePayment();
