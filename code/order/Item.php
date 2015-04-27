@@ -57,7 +57,8 @@ class Item extends DataObject {
 	private static $has_one = array(
 		'Order' => 'Order',
 		'Product' => 'Product',
-		'Variation' => 'Variation'
+		'Variation' => 'Variation',
+		'Page' => 'SaleableProductPage'
 	);
 	
 	/**
@@ -166,7 +167,22 @@ class Item extends DataObject {
 	function Product() {
 		return Versioned::get_version('Product', $this->ProductID, $this->ProductVersion);
 	}
-	
+
+	/**
+	 * Get the Page for the item
+	 * 
+	 * @return Mixed Product if it exists, otherwise null
+	 */
+	function Page() {
+		return Versioned::get_version('SaleableProductPage', $this->ProductID, $this->ProductVersion);
+	}
+
+	function Image() {
+		$image = Versioned::get_version('SaleableProductPage', $this->ProductID, $this->ProductVersion)->Images()->first();
+		// $image = $image->generateSetWidth(20);
+		return $image; 
+	}
+
 	/**
 	 * Validate this Item to make sure it can be added to a cart.
 	 * 
@@ -188,11 +204,12 @@ class Item extends DataObject {
 		$result = new ValidationResult(); 
 		
 		$product = $this->Product();
+		$page = $this->Page();
 		$variation = $this->Variation();
 		$quantity = $this->Quantity;
 
 		//Check that product is published and exists
-		if (!$product || !$product->exists() || !$product->isPublished()) {
+		if (!$product || !$product->exists() || !$page->exists() || !$product->isPublished()) {
 			$result->error(
 				'Sorry this product is no longer available',
 				'ProductExistsError'
