@@ -446,7 +446,9 @@ class Order extends DataObject implements PermissionProvider {
 		//get the account page and go to it
 		$account = DataObject::get_one('AccountPage');
 		if (strtolower($this->Status) == 'cart') {
-			return DataObject::get_one('CheckoutPage')->Link() . 'order/' . $this->ID;
+			// Save name in session variable for use in success page
+			$successPage = DataObject::get_one('OrderSuccessPage');
+			return $successPage->Link();
 		}
 		return $account->Link()."order/$this->ID";
 	}
