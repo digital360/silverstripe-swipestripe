@@ -105,7 +105,7 @@ class OrderForm extends Form {
 			$passwd = _t('CheckoutPage.PLEASE_CHOOSE_PASSWORD','Please choose a password, so you can login and check your order history in the future.');
 			$mber = sprintf(
 				'If you are already a member please %slog in%s for an express checkout, otherwise continue below.', 
-				"<a href=\"Security/login?BackURL=$link\">", 
+				"<a href=\"/Security/login?BackURL=$link\">", 
 				'</a>'
 			);
 
