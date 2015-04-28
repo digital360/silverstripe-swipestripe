@@ -19,7 +19,7 @@
 	</tbody>
 </table>
 
-<table class="table table-bordered">
+<%-- <table class="table table-bordered">
 	<tbody>
 		<tr>
 			<th><% _t('OrderPayments.TOTAL_OUTSTANDING','Total outstanding') %></th>
@@ -27,3 +27,4 @@
 		</tr>
 	</tbody>
 </table>
+ --%>
