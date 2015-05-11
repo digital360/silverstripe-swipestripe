@@ -44,8 +44,6 @@ class OrderForm extends Form {
 
 		$this->setTemplate('OrderForm');
 		$this->addExtraClass('order-form');
-
-		$this->setAttribute('data-eway-encrypt-key', 've0GaLXUKckmTexhuaHTkIQnJoeye3nHxA8lJIjr6MFqHu1P3E0aj00cy5vnguvTyi8t1RvqTJTEhcxYY1Qk2YwIXhTz8aDOti4/M8qtseHJ4DkBbUf5xysC+bh8zUfWY/UuqET6DsjxO4vENAjcFw5EVV39mGMX/FBOEnTWBGv1mWTL5pW/jxqAwzuzh9Pd0gasKRikINoAQvEWzr+VV3MdVIAKNz61Xs4700tx3EvDY5/UfJRTxfU5eTZzgFNysjHPK7nWU5j60Yre3stCufcDE2UKV4MJOYNDPx/kufI9OiLttS+E6rrFT8azg/sQzbHgF6ToO+iDdAJbu9hs6w==');
 	}
 
 	/**
