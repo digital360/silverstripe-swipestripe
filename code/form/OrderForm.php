@@ -32,6 +32,11 @@ class OrderForm extends Form {
 		if(isset($ewayConfig['encryption_keys'])) {
 			$encryptionKeys = $ewayConfig['encryption_keys'];
 			$encryptionKey = Director::isLive() ? $encryptionKeys['live'] : $encryptionKeys['test'];		
+			
+			// Eanble test account for logged in users on live
+			if(Director::isLive() && Permission::check('ADMIN')) {
+				$encryptionKey = $encryptionKeys['test'];
+			}	
 		} else {
 			user_error("Encryption keys are not set. Ensure they are set in the eway yml file.");
 		}
