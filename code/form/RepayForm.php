@@ -21,6 +21,16 @@ class RepayForm extends Form {
 	 * @param Order $currentOrder
 	 */
 	function __construct($controller, $name) {
+
+		$ewayConfig = Config::inst()->get('PaymentFactory', 'eWay');
+
+		if(isset($ewayConfig['encryption_keys'])) {
+			$encryptionKeys = $ewayConfig['encryption_keys'];
+			$encryptionKey = Director::isLive() ? $encryptionKeys['live'] : $encryptionKeys['test'];		
+		} else {
+			user_error("Encryption keys are not set. Ensure they are set in the eway yml file.");
+		}
+
 		parent::__construct($controller, $name, FieldList::create(), FieldList::create(), null);
 
 		Requirements::javascript(THIRDPARTY_DIR . '/jquery/jquery.js');
@@ -39,6 +49,8 @@ class RepayForm extends Form {
 		$this->setupFormErrors();
 		$this->setTemplate('RepayForm');
 		$this->addExtraClass('order-form');
+
+		$this->setAttribute('data-eway-encrypt-key', $encryptionKey);
 	}
 
 	/**
